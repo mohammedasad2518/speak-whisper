@@ -57,6 +57,11 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        neural: {
+          glow: "hsl(var(--neural-glow))",
+          purple: "hsl(var(--neural-purple))",
+          surface: "hsl(var(--neural-surface))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
