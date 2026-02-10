@@ -1,4 +1,4 @@
-import { Settings2 } from "lucide-react";
+import { Settings2, ChevronDown } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import {
   Select,
@@ -34,10 +34,10 @@ interface VoiceSettingsProps {
 
 const VoiceSettings = ({ onChange }: VoiceSettingsProps) => {
   const [open, setOpen] = useState(false);
-  const [voicePreset, setVoicePreset] = useState("default");
+  const [voicePreset, setVoicePreset] = useState("neutral-studio");
   const [speed, setSpeed] = useState([50]);
-  const [stability, setStability] = useState([65]);
-  const [expressiveness, setExpressiveness] = useState([50]);
+  const [stability, setStability] = useState([70]);
+  const [expressiveness, setExpressiveness] = useState([40]);
 
   const notify = useCallback(
     (patch: Partial<{ voicePreset: string; speed: number[]; stability: number[]; expressiveness: number[] }>) => {
@@ -54,102 +54,94 @@ const VoiceSettings = ({ onChange }: VoiceSettingsProps) => {
 
   return (
     <Collapsible open={open} onOpenChange={setOpen} className="w-full">
-      <CollapsibleTrigger className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors w-full justify-between py-2">
-        <div className="flex items-center gap-2">
-          <Settings2 className="h-4 w-4" />
-          <span>Voice Settings</span>
+      <CollapsibleTrigger className="flex items-center text-xs text-muted-foreground hover:text-foreground transition-colors w-full justify-between py-2 group">
+        <div className="flex items-center gap-1.5">
+          <Settings2 className="h-3.5 w-3.5" />
+          <span>Voice settings</span>
         </div>
-        <span className="text-xs">{open ? "Hide" : "Show"}</span>
+        <ChevronDown className={`h-3.5 w-3.5 transition-transform ${open ? "rotate-180" : ""}`} />
       </CollapsibleTrigger>
 
-      <CollapsibleContent className="space-y-5 pt-4 pb-2">
+      <CollapsibleContent className="space-y-4 pt-3 pb-1">
         {/* Voice Preset */}
-        <div className="space-y-2">
-          <Label>Voice Preset</Label>
+        <div className="space-y-1.5">
+          <Label className="text-xs text-muted-foreground">Voice</Label>
           <Select value={voicePreset} onValueChange={(v) => { setVoicePreset(v); notify({ voicePreset: v }); }}>
-            <SelectTrigger className="bg-card">
-              <SelectValue placeholder="Select voice" />
+            <SelectTrigger className="bg-card h-9 text-xs">
+              <SelectValue />
             </SelectTrigger>
             <SelectContent className="bg-popover">
-              <SelectItem value="default">Default</SelectItem>
               <SelectItem value="calm-male">Calm Male</SelectItem>
+              <SelectItem value="conversational-male">Conversational Male</SelectItem>
+              <SelectItem value="calm-female">Calm Female</SelectItem>
               <SelectItem value="conversational-female">Conversational Female</SelectItem>
-              <SelectItem value="narration">Narration</SelectItem>
+              <SelectItem value="narration">Professional Narration</SelectItem>
+              <SelectItem value="neutral-studio">Neutral Studio</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
-        {/* Speech Speed */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1.5">
-              <Label>Speech Speed</Label>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p className="max-w-[200px] text-xs">Controls the pace of speech generation. Lower values produce slower, more deliberate speech.</p>
-                </TooltipContent>
-              </Tooltip>
-            </div>
-            <span className="text-xs text-muted-foreground font-mono">{speed[0]}%</span>
-          </div>
-          <Slider value={speed} onValueChange={(v) => { setSpeed(v); notify({ speed: v }); }} max={100} step={1} />
-          <div className="flex justify-between text-[10px] text-muted-foreground">
-            <span>Slow</span>
-            <span>Fast</span>
-          </div>
-        </div>
-
-        {/* Voice Stability */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1.5">
-              <Label>Voice Stability</Label>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p className="max-w-[200px] text-xs">Higher stability makes the voice more consistent. Lower values introduce natural variation.</p>
-                </TooltipContent>
-              </Tooltip>
-            </div>
-            <span className="text-xs text-muted-foreground font-mono">{stability[0]}%</span>
-          </div>
-          <Slider value={stability} onValueChange={(v) => { setStability(v); notify({ stability: v }); }} max={100} step={1} />
-          <div className="flex justify-between text-[10px] text-muted-foreground">
-            <span>More variable</span>
-            <span>More stable</span>
-          </div>
-        </div>
-
-        {/* Expressiveness */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1.5">
-              <Label>Expressiveness</Label>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p className="max-w-[200px] text-xs">Controls emotional range. Higher values produce more expressive, dynamic speech.</p>
-                </TooltipContent>
-              </Tooltip>
-            </div>
-            <span className="text-xs text-muted-foreground font-mono">{expressiveness[0]}%</span>
-          </div>
-          <Slider value={expressiveness} onValueChange={(v) => { setExpressiveness(v); notify({ expressiveness: v }); }} max={100} step={1} />
-          <div className="flex justify-between text-[10px] text-muted-foreground">
-            <span>Low</span>
-            <span>High</span>
-          </div>
-        </div>
+        {/* Sliders */}
+        <SliderRow
+          label="Speed"
+          tooltip="Controls speech pace. The model adjusts phoneme duration for natural timing."
+          value={speed}
+          onChange={(v) => { setSpeed(v); notify({ speed: v }); }}
+          left="Slower"
+          right="Faster"
+        />
+        <SliderRow
+          label="Stability"
+          tooltip="Higher values produce consistent output. Lower values add natural vocal variation."
+          value={stability}
+          onChange={(v) => { setStability(v); notify({ stability: v }); }}
+          left="Variable"
+          right="Stable"
+        />
+        <SliderRow
+          label="Expressiveness"
+          tooltip="Controls prosodic variation — pitch modulation, emphasis, and emotional range."
+          value={expressiveness}
+          onChange={(v) => { setExpressiveness(v); notify({ expressiveness: v }); }}
+          left="Neutral"
+          right="Expressive"
+        />
       </CollapsibleContent>
     </Collapsible>
   );
 };
+
+function SliderRow({ label, tooltip, value, onChange, left, right }: {
+  label: string;
+  tooltip: string;
+  value: number[];
+  onChange: (v: number[]) => void;
+  left: string;
+  right: string;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-1">
+          <Label className="text-xs text-muted-foreground">{label}</Label>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Info className="h-3 w-3 text-muted-foreground/50 cursor-help" />
+            </TooltipTrigger>
+            <TooltipContent side="top">
+              <p className="max-w-[220px] text-xs">{tooltip}</p>
+            </TooltipContent>
+          </Tooltip>
+        </div>
+        <span className="text-[11px] text-muted-foreground font-mono">{value[0]}</span>
+      </div>
+      <Slider value={value} onValueChange={onChange} max={100} step={1} />
+      <div className="flex justify-between text-[10px] text-muted-foreground/50">
+        <span>{left}</span>
+        <span>{right}</span>
+      </div>
+    </div>
+  );
+}
 
 export default VoiceSettings;
