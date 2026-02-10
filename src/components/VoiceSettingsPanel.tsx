@@ -29,12 +29,12 @@ interface Props {
 }
 
 const voices = [
-  { value: "calm-male", label: "James" },
-  { value: "conversational-male", label: "Eric" },
-  { value: "calm-female", label: "Laura" },
-  { value: "conversational-female", label: "Sarah" },
-  { value: "narration", label: "Daniel" },
-  { value: "neutral-studio", label: "Alice" },
+  { value: "calm-male", label: "Guy" },
+  { value: "conversational-male", label: "Davis" },
+  { value: "calm-female", label: "Jenny" },
+  { value: "conversational-female", label: "Sara" },
+  { value: "narration", label: "Brandon" },
+  { value: "neutral-studio", label: "Emma" },
 ];
 
 const VoiceSettingsPanel = ({ open, onOpenChange, onChange }: Props) => {

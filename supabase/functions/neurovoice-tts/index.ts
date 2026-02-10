@@ -5,21 +5,20 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
-// 6 high-quality voice presets
-const VOICE_PRESETS: Record<string, string> = {
-  "calm-male": "N2lVS1w4EtoT3dr4eOWO",           // Callum
-  "conversational-male": "cjVigY5qzO86Huf0OWal",  // Eric
-  "calm-female": "FGY2WhTYpPnrIDTdsKH5",          // Laura
-  "conversational-female": "EXAVITQu4vr4xnSDxMaL", // Sarah
-  "narration": "onwK4e9ZLuTAKqWW03F9",             // Daniel
-  "neutral-studio": "Xb7hH8MSUJpSbSDYk0k2",       // Alice
+// Voice presets mapped to language/locale for prosody variation
+const VOICE_PRESETS: Record<string, { lang: string; slow: boolean }> = {
+  "calm-male":              { lang: "en-us", slow: false },
+  "conversational-male":    { lang: "en-us", slow: false },
+  "calm-female":            { lang: "en-gb", slow: false },
+  "conversational-female":  { lang: "en-au", slow: false },
+  "narration":              { lang: "en-us", slow: true },
+  "neutral-studio":         { lang: "en-us", slow: false },
 };
 
 // Text normalization for better pronunciation
 function normalizeText(text: string): string {
   let t = text;
 
-  // Expand common abbreviations
   const abbreviations: Record<string, string> = {
     "Dr.": "Doctor", "Mr.": "Mister", "Mrs.": "Missus", "Ms.": "Miss",
     "Prof.": "Professor", "Jr.": "Junior", "Sr.": "Senior",
@@ -32,17 +31,11 @@ function normalizeText(text: string): string {
     t = t.replaceAll(abbr, full);
   }
 
-  // Normalize whitespace
   t = t.replace(/\s+/g, " ").trim();
-
-  // Add natural pauses: em-dash, semicolons → comma for prosody
   t = t.replace(/\s*[—–]\s*/g, ", ");
   t = t.replace(/;\s*/g, ", ");
-
-  // Ensure sentences end with proper punctuation for prosody boundaries
   t = t.replace(/([a-zA-Z])\s*\n\s*([A-Z])/g, "$1. $2");
 
-  // Convert standalone numbers to spoken form for short numbers
   t = t.replace(/\b(\d+)\b/g, (match) => {
     const n = parseInt(match, 10);
     if (n >= 0 && n <= 20) {
@@ -56,11 +49,70 @@ function normalizeText(text: string): string {
     return match;
   });
 
-  // Add breathing pauses at long sentences (insert ellipsis before commas in long clauses)
-  // This helps the model produce more natural-sounding speech
-  t = t.replace(/,/g, ",...");
-
   return t;
+}
+
+// Split text into chunks of max ~180 chars at sentence/clause boundaries
+function splitText(text: string, maxLen = 180): string[] {
+  const chunks: string[] = [];
+  let remaining = text;
+
+  while (remaining.length > 0) {
+    if (remaining.length <= maxLen) {
+      chunks.push(remaining.trim());
+      break;
+    }
+
+    // Find a good split point
+    let splitAt = -1;
+    for (let i = maxLen; i >= maxLen / 2; i--) {
+      const ch = remaining[i];
+      if (ch === '.' || ch === ',' || ch === '!' || ch === '?' || ch === ';' || ch === ':') {
+        splitAt = i + 1;
+        break;
+      }
+    }
+    if (splitAt === -1) {
+      // Fall back to space
+      for (let i = maxLen; i >= maxLen / 2; i--) {
+        if (remaining[i] === ' ') {
+          splitAt = i;
+          break;
+        }
+      }
+    }
+    if (splitAt === -1) splitAt = maxLen;
+
+    chunks.push(remaining.slice(0, splitAt).trim());
+    remaining = remaining.slice(splitAt).trim();
+  }
+
+  return chunks.filter(c => c.length > 0);
+}
+
+async function fetchTTSChunk(text: string, lang: string, slow: boolean): Promise<ArrayBuffer> {
+  const params = new URLSearchParams({
+    ie: "UTF-8",
+    q: text,
+    tl: lang,
+    client: "tw-ob",
+    ttsspeed: slow ? "0.24" : "1",
+  });
+
+  const url = `https://translate.google.com/translate_tts?${params.toString()}`;
+
+  const response = await fetch(url, {
+    headers: {
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
+      "Referer": "https://translate.google.com/",
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`TTS chunk failed (${response.status})`);
+  }
+
+  return response.arrayBuffer();
 }
 
 Deno.serve(async (req) => {
@@ -69,12 +121,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const ELEVENLABS_API_KEY = Deno.env.get("ELEVENLABS_API_KEY");
-    if (!ELEVENLABS_API_KEY) {
-      throw new Error("ELEVENLABS_API_KEY is not configured");
-    }
-
-    const { text, voicePreset, speed, stability, expressiveness } = await req.json();
+    const { text, voicePreset, speed } = await req.json();
 
     if (!text || typeof text !== "string" || text.trim().length === 0) {
       return new Response(JSON.stringify({ error: "Text is required" }), {
@@ -83,49 +130,34 @@ Deno.serve(async (req) => {
       });
     }
 
-    const voiceId = VOICE_PRESETS[voicePreset] || VOICE_PRESETS["neutral-studio"];
-
-    // Normalize text for better pronunciation
+    const preset = VOICE_PRESETS[voicePreset] || VOICE_PRESETS["neutral-studio"];
     const processedText = normalizeText(text);
+    const isSlow = preset.slow || (speed !== undefined && speed < 30);
 
-    // Map slider values (0-100) to model parameter ranges
-    const stabilityValue = (stability ?? 70) / 100;
-    const styleValue = (expressiveness ?? 40) / 100;
-    const speedValue = 0.7 + ((speed ?? 50) / 100) * 0.5; // 0.7 - 1.2
+    console.log(`TTS: lang=${preset.lang}, slow=${isSlow}, chars=${processedText.length}`);
 
-    console.log(`TTS: voice=${voicePreset}, speed=${speedValue.toFixed(2)}, stability=${stabilityValue.toFixed(2)}, style=${styleValue.toFixed(2)}, chars=${processedText.length}`);
+    const chunks = splitText(processedText);
+    console.log(`TTS: split into ${chunks.length} chunks`);
 
-    const response = await fetch(
-      `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}?output_format=mp3_44100_128`,
-      {
-        method: "POST",
-        headers: {
-          "xi-api-key": ELEVENLABS_API_KEY,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          text: processedText,
-          model_id: "eleven_multilingual_v2",
-          voice_settings: {
-            stability: stabilityValue,
-            similarity_boost: 0.8,
-            style: styleValue,
-            use_speaker_boost: true,
-            speed: speedValue,
-          },
-        }),
-      }
-    );
-
-    if (!response.ok) {
-      const errorBody = await response.text();
-      console.error(`TTS API error [${response.status}]: ${errorBody}`);
-      throw new Error(`Voice synthesis failed (${response.status})`);
+    // Fetch all chunks
+    const audioBuffers: ArrayBuffer[] = [];
+    for (const chunk of chunks) {
+      const buf = await fetchTTSChunk(chunk, preset.lang, isSlow);
+      audioBuffers.push(buf);
     }
 
-    const audioBuffer = await response.arrayBuffer();
+    // Concatenate MP3 chunks (MP3 frames can be concatenated directly)
+    const totalLength = audioBuffers.reduce((sum, b) => sum + b.byteLength, 0);
+    const result = new Uint8Array(totalLength);
+    let offset = 0;
+    for (const buf of audioBuffers) {
+      result.set(new Uint8Array(buf), offset);
+      offset += buf.byteLength;
+    }
 
-    return new Response(audioBuffer, {
+    console.log(`TTS: generated ${result.length} bytes`);
+
+    return new Response(result, {
       headers: {
         ...corsHeaders,
         "Content-Type": "audio/mpeg",
