@@ -18,14 +18,39 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Label } from "@/components/ui/label";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Info } from "lucide-react";
 
-const VoiceSettings = () => {
+export interface VoiceSettingsState {
+  voicePreset: string;
+  speed: number;
+  stability: number;
+  expressiveness: number;
+}
+
+interface VoiceSettingsProps {
+  onChange?: (settings: VoiceSettingsState) => void;
+}
+
+const VoiceSettings = ({ onChange }: VoiceSettingsProps) => {
   const [open, setOpen] = useState(false);
+  const [voicePreset, setVoicePreset] = useState("default");
   const [speed, setSpeed] = useState([50]);
   const [stability, setStability] = useState([65]);
   const [expressiveness, setExpressiveness] = useState([50]);
+
+  const notify = useCallback(
+    (patch: Partial<{ voicePreset: string; speed: number[]; stability: number[]; expressiveness: number[] }>) => {
+      const s = {
+        voicePreset: patch.voicePreset ?? voicePreset,
+        speed: (patch.speed ?? speed)[0],
+        stability: (patch.stability ?? stability)[0],
+        expressiveness: (patch.expressiveness ?? expressiveness)[0],
+      };
+      onChange?.(s);
+    },
+    [voicePreset, speed, stability, expressiveness, onChange]
+  );
 
   return (
     <Collapsible open={open} onOpenChange={setOpen} className="w-full">
@@ -41,7 +66,7 @@ const VoiceSettings = () => {
         {/* Voice Preset */}
         <div className="space-y-2">
           <Label>Voice Preset</Label>
-          <Select defaultValue="default">
+          <Select value={voicePreset} onValueChange={(v) => { setVoicePreset(v); notify({ voicePreset: v }); }}>
             <SelectTrigger className="bg-card">
               <SelectValue placeholder="Select voice" />
             </SelectTrigger>
@@ -70,7 +95,7 @@ const VoiceSettings = () => {
             </div>
             <span className="text-xs text-muted-foreground font-mono">{speed[0]}%</span>
           </div>
-          <Slider value={speed} onValueChange={setSpeed} max={100} step={1} />
+          <Slider value={speed} onValueChange={(v) => { setSpeed(v); notify({ speed: v }); }} max={100} step={1} />
           <div className="flex justify-between text-[10px] text-muted-foreground">
             <span>Slow</span>
             <span>Fast</span>
@@ -93,7 +118,7 @@ const VoiceSettings = () => {
             </div>
             <span className="text-xs text-muted-foreground font-mono">{stability[0]}%</span>
           </div>
-          <Slider value={stability} onValueChange={setStability} max={100} step={1} />
+          <Slider value={stability} onValueChange={(v) => { setStability(v); notify({ stability: v }); }} max={100} step={1} />
           <div className="flex justify-between text-[10px] text-muted-foreground">
             <span>More variable</span>
             <span>More stable</span>
@@ -116,7 +141,7 @@ const VoiceSettings = () => {
             </div>
             <span className="text-xs text-muted-foreground font-mono">{expressiveness[0]}%</span>
           </div>
-          <Slider value={expressiveness} onValueChange={setExpressiveness} max={100} step={1} />
+          <Slider value={expressiveness} onValueChange={(v) => { setExpressiveness(v); notify({ expressiveness: v }); }} max={100} step={1} />
           <div className="flex justify-between text-[10px] text-muted-foreground">
             <span>Low</span>
             <span>High</span>
