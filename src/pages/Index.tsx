@@ -1,26 +1,24 @@
 import { useState, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Mic, Loader2 } from "lucide-react";
-import PipelineVisualization from "@/components/PipelineVisualization";
+import { Loader2 } from "lucide-react";
 import VoiceSettings, { type VoiceSettingsState } from "@/components/VoiceSettings";
 import AudioPlayer from "@/components/AudioPlayer";
 import { useToast } from "@/hooks/use-toast";
 
-const MAX_CHARS = 2000;
+const MAX_CHARS = 5000;
 
 const Index = () => {
   const [text, setText] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
-  const [activeStep, setActiveStep] = useState(-1);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const { toast } = useToast();
 
   const settingsRef = useRef<VoiceSettingsState>({
-    voicePreset: "default",
+    voicePreset: "neutral-studio",
     speed: 50,
-    stability: 65,
-    expressiveness: 50,
+    stability: 70,
+    expressiveness: 40,
   });
 
   const handleSettingsChange = useCallback((s: VoiceSettingsState) => {
@@ -34,17 +32,6 @@ const Index = () => {
     setAudioUrl(null);
 
     try {
-      // Step 0: Input received
-      setActiveStep(0);
-
-      // Step 1: Preprocessing
-      await new Promise((r) => setTimeout(r, 400));
-      setActiveStep(1);
-
-      // Step 2: Neural inference (actual API call)
-      await new Promise((r) => setTimeout(r, 300));
-      setActiveStep(2);
-
       const settings = settingsRef.current;
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/neurovoice-tts`,
@@ -72,15 +59,9 @@ const Index = () => {
 
       const audioBlob = await response.blob();
       const url = URL.createObjectURL(audioBlob);
-
-      // Step 3: Output ready
-      setActiveStep(3);
       setAudioUrl(url);
-
-      toast({ title: "Audio generated", description: "ML inference complete — audio is ready to play." });
     } catch (error: unknown) {
       console.error("TTS generation error:", error);
-      setActiveStep(-1);
       const message = error instanceof Error ? error.message : "Failed to generate audio";
       toast({ title: "Generation failed", description: message, variant: "destructive" });
     } finally {
@@ -91,29 +72,21 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
-      <header className="border-b border-border px-6 py-4">
-        <div className="max-w-3xl mx-auto flex items-center gap-3">
-          <div className="h-8 w-8 rounded-lg bg-primary/10 neural-border flex items-center justify-center">
-            <Mic className="h-4 w-4 text-primary" />
-          </div>
-          <div>
-            <h1 className="text-lg font-semibold tracking-tight">NeuroVoice</h1>
-            <p className="text-xs text-muted-foreground">Neural Network Powered Text-to-Speech (Academic Project)</p>
-          </div>
+      <header className="px-6 pt-10 pb-2">
+        <div className="max-w-2xl mx-auto">
+          <h1 className="text-xl font-semibold tracking-tight">NeuroVoice</h1>
+          <p className="text-xs text-muted-foreground mt-1">Text-to-speech synthesis</p>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 px-6 py-8">
-        <div className="max-w-3xl mx-auto space-y-6">
-          {/* Pipeline Visualization */}
-          <PipelineVisualization activeStep={activeStep} />
-
-          {/* Text Input Card */}
-          <div className="rounded-xl border border-border bg-card p-5 space-y-4">
+      <main className="flex-1 px-6 py-6">
+        <div className="max-w-2xl mx-auto space-y-5">
+          {/* Text Input */}
+          <div className="space-y-3">
             <Textarea
-              placeholder="Type or paste text you want to convert to speech"
-              className="min-h-[160px] bg-muted/40 border-border resize-none text-sm leading-relaxed focus-visible:ring-primary/40"
+              placeholder="Enter text to synthesize…"
+              className="min-h-[180px] bg-card border-border resize-none text-[15px] leading-relaxed focus-visible:ring-1 focus-visible:ring-ring rounded-lg"
               value={text}
               onChange={(e) => {
                 if (e.target.value.length <= MAX_CHARS) setText(e.target.value);
@@ -121,26 +94,29 @@ const Index = () => {
               disabled={isGenerating}
             />
             <div className="flex items-center justify-between">
-              <span className={`text-xs font-mono ${text.length >= MAX_CHARS ? "text-destructive" : "text-muted-foreground"}`}>
-                {text.length} / {MAX_CHARS}
+              <span className={`text-[11px] font-mono ${text.length >= MAX_CHARS ? "text-destructive" : "text-muted-foreground"}`}>
+                {text.length.toLocaleString()} / {MAX_CHARS.toLocaleString()}
               </span>
-              <Button className="neural-glow" disabled={!text.trim() || isGenerating} onClick={handleGenerate}>
+              <Button
+                size="sm"
+                disabled={!text.trim() || isGenerating}
+                onClick={handleGenerate}
+                className="h-8 px-4 text-xs font-medium"
+              >
                 {isGenerating ? (
                   <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Generating…
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    Generating
                   </>
                 ) : (
-                  "Generate Voice"
+                  "Generate"
                 )}
               </Button>
             </div>
           </div>
 
           {/* Voice Settings */}
-          <div className="rounded-xl border border-border bg-card p-5">
-            <VoiceSettings onChange={handleSettingsChange} />
-          </div>
+          <VoiceSettings onChange={handleSettingsChange} />
 
           {/* Audio Output */}
           <AudioPlayer audioUrl={audioUrl} />
@@ -148,9 +124,9 @@ const Index = () => {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-border px-6 py-3">
-        <p className="text-center text-[11px] text-muted-foreground">
-          Academic demonstration — ML inference using a pre-trained deep learning TTS model with prosody modeling &amp; parameter tuning
+      <footer className="px-6 py-4">
+        <p className="text-center text-[11px] text-muted-foreground/60">
+          Neural speech synthesis — academic research project
         </p>
       </footer>
     </div>
