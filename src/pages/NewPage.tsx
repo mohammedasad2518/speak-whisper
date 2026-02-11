@@ -5,8 +5,8 @@ const NewPage = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="flex-1 px-5 pt-14 pb-6">
-      <div className="max-w-lg mx-auto space-y-6">
+    <div className="flex-1 p-6 md:p-10">
+      <div className="max-w-2xl space-y-8">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">New</h1>
           <p className="text-sm text-muted-foreground mt-1">Start from scratch</p>
@@ -15,14 +15,19 @@ const NewPage = () => {
         {/* Primary TTS button */}
         <button
           onClick={() => navigate("/editor")}
-          className="w-full flex items-center justify-center gap-3 rounded-full bg-primary text-primary-foreground px-6 py-4 hover:bg-primary/90 transition-colors"
+          className="w-full max-w-md flex items-center gap-4 rounded-2xl bg-card border border-border px-6 py-5 hover:bg-accent/40 transition-colors"
         >
-          <Mic className="h-5 w-5" />
-          <span className="text-base font-semibold">Text To Speech</span>
+          <div className="h-11 w-11 rounded-xl bg-accent flex items-center justify-center">
+            <Mic className="h-5 w-5" />
+          </div>
+          <div className="text-left">
+            <p className="text-base font-semibold">Text To Speech</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Generate natural speech from text</p>
+          </div>
         </button>
 
-        {/* Disabled creation cards */}
-        <div className="grid grid-cols-2 gap-3">
+        {/* Disabled cards */}
+        <div className="grid grid-cols-2 gap-3 max-w-md">
           <div className="rounded-2xl bg-card border border-border p-5 opacity-40 pointer-events-none">
             <ImageIcon className="h-6 w-6 text-muted-foreground mb-3" />
             <p className="text-sm font-medium">Image</p>
@@ -36,7 +41,7 @@ const NewPage = () => {
         </div>
 
         {/* Coming soon blurred card */}
-        <div className="relative rounded-2xl bg-card border border-border p-6 overflow-hidden">
+        <div className="relative rounded-2xl bg-card border border-border p-6 overflow-hidden max-w-md">
           <div className="absolute inset-0 backdrop-blur-sm bg-background/60 z-10 flex flex-col items-center justify-center gap-3">
             <p className="text-base font-semibold">Coming soon</p>
             <p className="text-xs text-muted-foreground">Image &amp; Video generation</p>
@@ -45,7 +50,6 @@ const NewPage = () => {
               Notify me
             </button>
           </div>
-          {/* Placeholder content behind blur */}
           <div className="opacity-30 space-y-3">
             <div className="h-20 rounded-xl bg-muted" />
             <div className="h-4 w-2/3 rounded bg-muted" />

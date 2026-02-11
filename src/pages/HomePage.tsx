@@ -2,41 +2,35 @@ import { useNavigate } from "react-router-dom";
 import { Plus, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useProjects, type Project } from "@/hooks/useProjects";
+import { useAuth } from "@/hooks/useAuth";
 
 const HomePage = () => {
   const navigate = useNavigate();
   const { projects } = useProjects();
+  const { user } = useAuth();
 
   return (
-    <div className="flex-1 px-5 pt-14 pb-6">
-      <div className="max-w-lg mx-auto space-y-6">
-        <h1 className="text-2xl font-semibold tracking-tight">Home</h1>
+    <div className="flex-1 p-6 md:p-10">
+      <div className="max-w-3xl space-y-8">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Welcome back, {user?.name ?? "there"}</h1>
+          <p className="text-sm text-muted-foreground mt-1">Create natural-sounding speech from text</p>
+        </div>
 
-        <Button
-          onClick={() => navigate("/new")}
-          className="w-full h-14 rounded-2xl text-base font-medium gap-2"
-        >
+        <Button onClick={() => navigate("/new")} size="lg" className="rounded-xl gap-2 h-12 px-6">
           <Plus className="h-5 w-5" />
           Create new
         </Button>
 
-        {/* Promo banner */}
-        <div className="rounded-2xl bg-gradient-to-br from-accent to-secondary p-5">
-          <p className="text-sm font-medium text-foreground">NeuroVoice Studio</p>
-          <p className="text-xs text-muted-foreground mt-1">
-            Generate expressive, natural-sounding speech from text.
-          </p>
-        </div>
-
         {/* Recent projects */}
-        <div className="space-y-3">
+        <div className="space-y-4">
           <h2 className="text-sm font-medium text-muted-foreground">Recent projects</h2>
           {projects.length === 0 ? (
-            <p className="text-xs text-muted-foreground/60 py-8 text-center">
-              No projects yet. Create your first one!
-            </p>
+            <div className="rounded-2xl border border-dashed border-border p-10 text-center">
+              <p className="text-sm text-muted-foreground">No projects yet. Create your first one!</p>
+            </div>
           ) : (
-            <div className="space-y-2">
+            <div className="grid gap-3 sm:grid-cols-2">
               {projects.map((p) => (
                 <ProjectCard key={p.id} project={p} />
               ))}
@@ -49,20 +43,20 @@ const HomePage = () => {
 };
 
 function ProjectCard({ project }: { project: Project }) {
-  const { playProject } = useProjects();
+  const { playProject, currentlyPlaying } = useProjects();
+  const playing = currentlyPlaying === project.id;
 
   return (
-    <div className="flex items-center gap-3 rounded-2xl bg-card p-4">
+    <div className="flex items-center gap-3 rounded-2xl bg-card border border-border p-4 hover:bg-accent/30 transition-colors">
       <button
         onClick={() => playProject(project.id)}
         className="flex-shrink-0 h-10 w-10 rounded-full bg-accent flex items-center justify-center hover:bg-accent/80 transition-colors"
       >
-        <Play className="h-4 w-4 ml-0.5" />
+        <Play className={`h-4 w-4 ml-0.5 ${playing ? "text-primary" : ""}`} />
       </button>
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium truncate">{project.title}</p>
         <div className="flex items-center gap-2 mt-0.5">
-          {/* Mini waveform */}
           <div className="flex items-end gap-[2px] h-3">
             {Array.from({ length: 12 }).map((_, i) => (
               <div

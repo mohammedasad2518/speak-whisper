@@ -8,29 +8,38 @@ import HomePage from "@/pages/HomePage";
 import NewPage from "@/pages/NewPage";
 import EditorPage from "@/pages/EditorPage";
 import CreatorPage from "@/pages/CreatorPage";
+import SettingsPage from "@/pages/SettingsPage";
+import SignInPage from "@/pages/SignInPage";
+import SignUpPage from "@/pages/SignUpPage";
 import NotFound from "@/pages/NotFound";
 import { ProjectsProvider } from "@/hooks/useProjects";
+import { AuthProvider } from "@/hooks/useAuth";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <ProjectsProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route element={<AppLayout />}>
-              <Route path="/" element={<HomePage />} />
-              <Route path="/new" element={<NewPage />} />
-              <Route path="/creator" element={<CreatorPage />} />
-            </Route>
-            <Route path="/editor" element={<EditorPage />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </ProjectsProvider>
+      <AuthProvider>
+        <ProjectsProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              <Route path="/signin" element={<SignInPage />} />
+              <Route path="/signup" element={<SignUpPage />} />
+              <Route element={<AppLayout />}>
+                <Route path="/" element={<HomePage />} />
+                <Route path="/new" element={<NewPage />} />
+                <Route path="/creator" element={<CreatorPage />} />
+                <Route path="/settings" element={<SettingsPage />} />
+              </Route>
+              <Route path="/editor" element={<EditorPage />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </ProjectsProvider>
+      </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );
