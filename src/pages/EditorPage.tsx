@@ -64,7 +64,6 @@ const EditorPage = () => {
       const url = URL.createObjectURL(audioBlob);
       setAudioUrl(url);
 
-      // Save to projects
       const title = text.slice(0, 40).trim() + (text.length > 40 ? "…" : "");
       addProject({ title, text, audioUrl: url });
     } catch (error: unknown) {
@@ -85,24 +84,24 @@ const EditorPage = () => {
   };
 
   return (
-    <div className="flex-1 flex flex-col px-5 pt-6 pb-6 relative">
-      <div className="max-w-lg mx-auto w-full flex-1 flex flex-col">
-        {/* Top bar */}
-        <div className="flex items-center justify-between mb-6">
-          <button onClick={() => navigate(-1)} className="p-2 -ml-2 hover:bg-accent rounded-full transition-colors">
-            <ArrowLeft className="h-5 w-5" />
-          </button>
-          <h1 className="text-base font-semibold">Text to Speech</h1>
-          <button onClick={() => setSettingsOpen(true)} className="p-2 -mr-2 hover:bg-accent rounded-full transition-colors">
-            <Settings2 className="h-5 w-5" />
-          </button>
-        </div>
+    <div className="min-h-screen bg-background flex flex-col">
+      {/* Top bar */}
+      <div className="h-14 border-b border-border flex items-center justify-between px-6 shrink-0">
+        <button onClick={() => navigate(-1)} className="p-2 -ml-2 hover:bg-accent rounded-lg transition-colors">
+          <ArrowLeft className="h-5 w-5" />
+        </button>
+        <h1 className="text-base font-semibold">Text to Speech</h1>
+        <button onClick={() => setSettingsOpen(true)} className="p-2 -mr-2 hover:bg-accent rounded-lg transition-colors">
+          <Settings2 className="h-5 w-5" />
+        </button>
+      </div>
 
-        {/* Text input */}
+      {/* Editor body */}
+      <div className="flex-1 flex flex-col max-w-3xl w-full mx-auto p-6 md:p-10">
         <div className="flex-1 flex flex-col">
           <textarea
-            placeholder="Start typing here…"
-            className="flex-1 min-h-[200px] w-full bg-transparent text-[16px] leading-relaxed resize-none focus:outline-none placeholder:text-muted-foreground/40"
+            placeholder="Start typing your text here..."
+            className="flex-1 min-h-[250px] w-full bg-transparent text-[16px] leading-relaxed resize-none focus:outline-none placeholder:text-muted-foreground/40"
             value={text}
             onChange={(e) => {
               if (e.target.value.length <= MAX_CHARS) setText(e.target.value);
@@ -116,7 +115,7 @@ const EditorPage = () => {
 
         {/* Audio output */}
         {audioUrl && (
-          <div className="mt-4 space-y-2">
+          <div className="mt-6 space-y-3">
             <EditorAudioPlayer audioUrl={audioUrl} />
             <button onClick={handleDownload} className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors">
               <Download className="h-3.5 w-3.5" />
@@ -125,8 +124,8 @@ const EditorPage = () => {
           </div>
         )}
 
-        {/* Floating generate button */}
-        <div className="flex justify-center mt-6 mb-2">
+        {/* Generate button */}
+        <div className="flex justify-center mt-8 mb-4">
           <Button
             size="lg"
             disabled={!text.trim() || isGenerating}
@@ -144,7 +143,6 @@ const EditorPage = () => {
         </div>
       </div>
 
-      {/* Voice settings slide-up panel */}
       <VoiceSettingsPanel
         open={settingsOpen}
         onOpenChange={setSettingsOpen}
