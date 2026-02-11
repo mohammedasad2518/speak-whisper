@@ -9,7 +9,7 @@ const tabs = [
 ];
 
 const BottomNav = () => (
-  <nav className="fixed bottom-0 inset-x-0 z-50 border-t border-border bg-background/95 backdrop-blur-md">
+  <nav className="fixed bottom-0 inset-x-0 z-50 border-t border-border bg-background">
     <div className="max-w-lg mx-auto flex items-center justify-around h-16">
       {tabs.map(({ to, icon: Icon, label }) => (
         <NavLink
@@ -18,13 +18,20 @@ const BottomNav = () => (
           end={to === "/"}
           className={({ isActive }) =>
             cn(
-              "flex flex-col items-center gap-1 text-[11px] font-medium transition-colors",
-              isActive ? "text-foreground" : "text-muted-foreground"
+              "flex flex-col items-center gap-1 text-[11px] font-medium transition-colors relative",
+              isActive ? "text-foreground" : "text-muted-foreground/60"
             )
           }
         >
-          <Icon className="h-5 w-5" />
-          <span>{label}</span>
+          {({ isActive }) => (
+            <>
+              {isActive && (
+                <span className="absolute -top-[1px] left-1/2 -translate-x-1/2 w-6 h-[2px] rounded-full bg-foreground" />
+              )}
+              <Icon className="h-5 w-5" />
+              <span>{label}</span>
+            </>
+          )}
         </NavLink>
       ))}
     </div>
