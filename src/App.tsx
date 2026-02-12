@@ -4,9 +4,11 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import AppLayout from "@/components/AppLayout";
+import LandingPage from "@/pages/LandingPage";
 import HomePage from "@/pages/HomePage";
 import NewPage from "@/pages/NewPage";
 import EditorPage from "@/pages/EditorPage";
+import SpeechToTextPage from "@/pages/SpeechToTextPage";
 import CreatorPage from "@/pages/CreatorPage";
 import SettingsPage from "@/pages/SettingsPage";
 import SignInPage from "@/pages/SignInPage";
@@ -26,15 +28,17 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <Routes>
+              <Route path="/" element={<LandingPage />} />
               <Route path="/signin" element={<SignInPage />} />
               <Route path="/signup" element={<SignUpPage />} />
               <Route element={<AppLayout />}>
-                <Route path="/" element={<HomePage />} />
+                <Route path="/home" element={<HomePage />} />
                 <Route path="/new" element={<NewPage />} />
                 <Route path="/creator" element={<CreatorPage />} />
                 <Route path="/settings" element={<SettingsPage />} />
               </Route>
-              <Route path="/editor" element={<EditorPage />} />
+              <Route path="/editor" element={<div className="dark"><EditorPage /></div>} />
+              <Route path="/stt" element={<div className="dark"><SpeechToTextPage /></div>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

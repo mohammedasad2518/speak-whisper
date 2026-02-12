@@ -17,7 +17,7 @@ const HomePage = () => {
           <p className="text-sm text-muted-foreground mt-1">Create natural-sounding speech from text</p>
         </div>
 
-        <Button onClick={() => navigate("/new")} size="lg" className="rounded-xl gap-2 h-12 px-6">
+        <Button onClick={() => navigate("/new")} size="lg" className="rounded-xl gap-2 h-12 px-6 shadow-none">
           <Plus className="h-5 w-5" />
           Create new
         </Button>
