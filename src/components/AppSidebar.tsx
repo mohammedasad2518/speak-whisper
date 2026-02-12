@@ -3,7 +3,7 @@ import { NavLink, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
 const links = [
-  { to: "/", icon: Home, label: "Home" },
+  { to: "/home", icon: Home, label: "Home" },
   { to: "/new", icon: PlusCircle, label: "New" },
   { to: "/creator", icon: Library, label: "Creator" },
   { to: "/settings", icon: Settings, label: "Settings" },
@@ -16,7 +16,7 @@ const AppSidebar = () => {
     <aside className="hidden md:flex flex-col w-56 border-r border-border bg-card/50 px-3 py-6 shrink-0">
       <nav className="space-y-1">
         {links.map(({ to, icon: Icon, label }) => {
-          const active = to === "/" ? location.pathname === "/" : location.pathname.startsWith(to);
+          const active = location.pathname === to || (to !== "/home" && location.pathname.startsWith(to));
           return (
             <NavLink
               key={to}

@@ -8,7 +8,7 @@ const TopNavbar = () => {
 
   const handleSignOut = () => {
     signOut();
-    navigate("/signin");
+    navigate("/");
   };
 
   return (
