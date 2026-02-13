@@ -9,6 +9,67 @@ import { useProjects } from "@/hooks/useProjects";
 
 const MAX_CHARS = 5000;
 
+async function applyPitchShift(blob: Blob, semitones: number): Promise<Blob> {
+  const arrayBuffer = await blob.arrayBuffer();
+  const audioCtx = new AudioContext();
+  const decoded = await audioCtx.decodeAudioData(arrayBuffer);
+
+  const rate = Math.pow(2, semitones / 12);
+  const offlineCtx = new OfflineAudioContext(
+    decoded.numberOfChannels,
+    Math.ceil(decoded.length / rate),
+    decoded.sampleRate
+  );
+
+  const source = offlineCtx.createBufferSource();
+  source.buffer = decoded;
+  source.playbackRate.value = rate;
+  source.connect(offlineCtx.destination);
+  source.start(0);
+
+  const rendered = await offlineCtx.startRendering();
+
+  const wavBuffer = audioBufferToWav(rendered);
+  await audioCtx.close();
+  return new Blob([wavBuffer], { type: "audio/wav" });
+}
+
+function audioBufferToWav(buffer: AudioBuffer): ArrayBuffer {
+  const numChannels = buffer.numberOfChannels;
+  const sampleRate = buffer.sampleRate;
+  const length = buffer.length * numChannels * 2 + 44;
+  const out = new ArrayBuffer(length);
+  const view = new DataView(out);
+
+  const writeStr = (offset: number, str: string) => {
+    for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i));
+  };
+
+  writeStr(0, "RIFF");
+  view.setUint32(4, length - 8, true);
+  writeStr(8, "WAVE");
+  writeStr(12, "fmt ");
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true);
+  view.setUint16(22, numChannels, true);
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * numChannels * 2, true);
+  view.setUint16(32, numChannels * 2, true);
+  view.setUint16(34, 16, true);
+  writeStr(36, "data");
+  view.setUint32(40, length - 44, true);
+
+  let offset = 44;
+  for (let i = 0; i < buffer.length; i++) {
+    for (let ch = 0; ch < numChannels; ch++) {
+      const sample = Math.max(-1, Math.min(1, buffer.getChannelData(ch)[i]));
+      view.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7FFF, true);
+      offset += 2;
+    }
+  }
+  return out;
+}
+
 const EditorPage = () => {
   const navigate = useNavigate();
   const [text, setText] = useState("");
@@ -19,8 +80,9 @@ const EditorPage = () => {
   const { addProject } = useProjects();
 
   const settingsRef = useRef<VoiceSettingsState>({
-    voicePreset: "neutral-narration",
+    voicePreset: "neel",
     speed: 50,
+    pitch: 0,
     stability: 70,
     expressiveness: 40,
   });
@@ -61,11 +123,19 @@ const EditorPage = () => {
       }
 
       const audioBlob = await response.blob();
-      const url = URL.createObjectURL(audioBlob);
-      setAudioUrl(url);
+      const pitchSemitones = settings.pitch;
+
+      let finalUrl: string;
+      if (pitchSemitones !== 0) {
+        const shifted = await applyPitchShift(audioBlob, pitchSemitones);
+        finalUrl = URL.createObjectURL(shifted);
+      } else {
+        finalUrl = URL.createObjectURL(audioBlob);
+      }
+      setAudioUrl(finalUrl);
 
       const title = text.slice(0, 40).trim() + (text.length > 40 ? "…" : "");
-      addProject({ title, text, audioUrl: url });
+      addProject({ title, text, audioUrl: finalUrl });
     } catch (error: unknown) {
       console.error("TTS generation error:", error);
       const message = error instanceof Error ? error.message : "Failed to generate audio";

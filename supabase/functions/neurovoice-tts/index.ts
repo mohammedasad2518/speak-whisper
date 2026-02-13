@@ -7,12 +7,12 @@ const corsHeaders = {
 
 // Each preset maps to a DISTINCT Google Translate TTS voice identity
 // using different language/locale codes to produce genuinely different speaker characteristics
-const VOICE_PRESETS: Record<string, { lang: string; slow: boolean; pitch: "low" | "mid" | "high" }> = {
-  "male-deep":          { lang: "en-gb", slow: true,  pitch: "low" },   // British male, slower = deeper resonance
-  "male-calm":          { lang: "en-us", slow: false, pitch: "low" },   // American male, natural pace
-  "female-warm":        { lang: "en-au", slow: false, pitch: "high" },  // Australian female voice
-  "female-expressive":  { lang: "en-in", slow: false, pitch: "high" },  // Indian English female, distinct intonation
-  "neutral-narration":  { lang: "en-us", slow: true,  pitch: "mid" },   // American, deliberate narration pace
+const VOICE_PRESETS: Record<string, { lang: string; slow: boolean }> = {
+  "arjun":   { lang: "en-gb", slow: true  },  // British English — deeper, measured
+  "riya":    { lang: "en-au", slow: false },  // Australian English — warm, lighter
+  "karan":   { lang: "en-us", slow: false },  // American English — clear, neutral
+  "ananya":  { lang: "en-in", slow: false },  // Indian English — distinct intonation
+  "neel":    { lang: "en-za", slow: true  },  // South African English — balanced narration
 };
 
 // Text normalization for better pronunciation
@@ -128,7 +128,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const preset = VOICE_PRESETS[voicePreset] || VOICE_PRESETS["neutral-narration"];
+    const preset = VOICE_PRESETS[voicePreset] || VOICE_PRESETS["neel"];
     const processedText = normalizeText(text);
     const isSlow = preset.slow || (speed !== undefined && speed < 30);
 
