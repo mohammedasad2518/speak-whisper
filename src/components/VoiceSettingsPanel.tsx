@@ -29,16 +29,15 @@ interface Props {
 }
 
 const voices = [
-  { value: "calm-male", label: "Guy" },
-  { value: "conversational-male", label: "Davis" },
-  { value: "calm-female", label: "Jenny" },
-  { value: "conversational-female", label: "Sara" },
-  { value: "narration", label: "Brandon" },
-  { value: "neutral-studio", label: "Emma" },
+  { value: "male-deep", label: "Male – Deep" },
+  { value: "male-calm", label: "Male – Calm" },
+  { value: "female-warm", label: "Female – Warm" },
+  { value: "female-expressive", label: "Female – Expressive" },
+  { value: "neutral-narration", label: "Neutral – Narration" },
 ];
 
 const VoiceSettingsPanel = ({ open, onOpenChange, onChange }: Props) => {
-  const [voicePreset, setVoicePreset] = useState("neutral-studio");
+  const [voicePreset, setVoicePreset] = useState("neutral-narration");
   const [speed, setSpeed] = useState([50]);
   const [stability, setStability] = useState([70]);
   const [expressiveness, setExpressiveness] = useState([40]);

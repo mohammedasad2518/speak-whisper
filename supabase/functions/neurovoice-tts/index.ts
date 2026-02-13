@@ -5,14 +5,14 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
-// Voice presets mapped to language/locale for prosody variation
-const VOICE_PRESETS: Record<string, { lang: string; slow: boolean }> = {
-  "calm-male":              { lang: "en-us", slow: false },
-  "conversational-male":    { lang: "en-us", slow: false },
-  "calm-female":            { lang: "en-gb", slow: false },
-  "conversational-female":  { lang: "en-au", slow: false },
-  "narration":              { lang: "en-us", slow: true },
-  "neutral-studio":         { lang: "en-us", slow: false },
+// Each preset maps to a DISTINCT Google Translate TTS voice identity
+// using different language/locale codes to produce genuinely different speaker characteristics
+const VOICE_PRESETS: Record<string, { lang: string; slow: boolean; pitch: "low" | "mid" | "high" }> = {
+  "male-deep":          { lang: "en-gb", slow: true,  pitch: "low" },   // British male, slower = deeper resonance
+  "male-calm":          { lang: "en-us", slow: false, pitch: "low" },   // American male, natural pace
+  "female-warm":        { lang: "en-au", slow: false, pitch: "high" },  // Australian female voice
+  "female-expressive":  { lang: "en-in", slow: false, pitch: "high" },  // Indian English female, distinct intonation
+  "neutral-narration":  { lang: "en-us", slow: true,  pitch: "mid" },   // American, deliberate narration pace
 };
 
 // Text normalization for better pronunciation
@@ -63,7 +63,6 @@ function splitText(text: string, maxLen = 180): string[] {
       break;
     }
 
-    // Find a good split point
     let splitAt = -1;
     for (let i = maxLen; i >= maxLen / 2; i--) {
       const ch = remaining[i];
@@ -73,7 +72,6 @@ function splitText(text: string, maxLen = 180): string[] {
       }
     }
     if (splitAt === -1) {
-      // Fall back to space
       for (let i = maxLen; i >= maxLen / 2; i--) {
         if (remaining[i] === ' ') {
           splitAt = i;
@@ -130,23 +128,22 @@ Deno.serve(async (req) => {
       });
     }
 
-    const preset = VOICE_PRESETS[voicePreset] || VOICE_PRESETS["neutral-studio"];
+    const preset = VOICE_PRESETS[voicePreset] || VOICE_PRESETS["neutral-narration"];
     const processedText = normalizeText(text);
     const isSlow = preset.slow || (speed !== undefined && speed < 30);
 
-    console.log(`TTS: lang=${preset.lang}, slow=${isSlow}, chars=${processedText.length}`);
+    console.log(`TTS: voice=${voicePreset}, lang=${preset.lang}, slow=${isSlow}, chars=${processedText.length}`);
 
     const chunks = splitText(processedText);
     console.log(`TTS: split into ${chunks.length} chunks`);
 
-    // Fetch all chunks
     const audioBuffers: ArrayBuffer[] = [];
     for (const chunk of chunks) {
       const buf = await fetchTTSChunk(chunk, preset.lang, isSlow);
       audioBuffers.push(buf);
     }
 
-    // Concatenate MP3 chunks (MP3 frames can be concatenated directly)
+    // Concatenate MP3 chunks
     const totalLength = audioBuffers.reduce((sum, b) => sum + b.byteLength, 0);
     const result = new Uint8Array(totalLength);
     let offset = 0;

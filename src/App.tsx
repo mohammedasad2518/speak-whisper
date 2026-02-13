@@ -37,8 +37,8 @@ const App = () => (
                 <Route path="/creator" element={<CreatorPage />} />
                 <Route path="/settings" element={<SettingsPage />} />
               </Route>
-              <Route path="/editor" element={<div className="dark"><EditorPage /></div>} />
-              <Route path="/stt" element={<div className="dark"><SpeechToTextPage /></div>} />
+              <Route path="/editor" element={<EditorPage />} />
+              <Route path="/stt" element={<SpeechToTextPage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
