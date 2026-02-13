@@ -19,7 +19,7 @@ const EditorPage = () => {
   const { addProject } = useProjects();
 
   const settingsRef = useRef<VoiceSettingsState>({
-    voicePreset: "neutral-studio",
+    voicePreset: "neutral-narration",
     speed: 50,
     stability: 70,
     expressiveness: 40,
