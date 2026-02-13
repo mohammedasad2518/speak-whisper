@@ -18,6 +18,7 @@ import { useState, useCallback, useEffect } from "react";
 export interface VoiceSettingsState {
   voicePreset: string;
   speed: number;
+  pitch: number;
   stability: number;
   expressiveness: number;
 }
@@ -29,16 +30,17 @@ interface Props {
 }
 
 const voices = [
-  { value: "male-deep", label: "Male – Deep" },
-  { value: "male-calm", label: "Male – Calm" },
-  { value: "female-warm", label: "Female – Warm" },
-  { value: "female-expressive", label: "Female – Expressive" },
-  { value: "neutral-narration", label: "Neutral – Narration" },
+  { value: "arjun", label: "Arjun" },
+  { value: "riya", label: "Riya" },
+  { value: "karan", label: "Karan" },
+  { value: "ananya", label: "Ananya" },
+  { value: "neel", label: "Neel" },
 ];
 
 const VoiceSettingsPanel = ({ open, onOpenChange, onChange }: Props) => {
-  const [voicePreset, setVoicePreset] = useState("neutral-narration");
+  const [voicePreset, setVoicePreset] = useState("neel");
   const [speed, setSpeed] = useState([50]);
+  const [pitch, setPitch] = useState([0]);
   const [stability, setStability] = useState([70]);
   const [expressiveness, setExpressiveness] = useState([40]);
 
@@ -46,10 +48,11 @@ const VoiceSettingsPanel = ({ open, onOpenChange, onChange }: Props) => {
     onChange?.({
       voicePreset,
       speed: speed[0],
+      pitch: pitch[0],
       stability: stability[0],
       expressiveness: expressiveness[0],
     });
-  }, [voicePreset, speed, stability, expressiveness, onChange]);
+  }, [voicePreset, speed, pitch, stability, expressiveness, onChange]);
 
   useEffect(() => { notify(); }, [notify]);
 
@@ -75,24 +78,30 @@ const VoiceSettingsPanel = ({ open, onOpenChange, onChange }: Props) => {
             </Select>
           </div>
 
-          <SliderRow label="Speed" value={speed} onChange={setSpeed} />
-          <SliderRow label="Stability" value={stability} onChange={setStability} />
-          <SliderRow label="Expressiveness" value={expressiveness} onChange={setExpressiveness} />
+          <SliderRow label="Speed" value={speed} onChange={setSpeed} min={0} max={100} />
+          <SliderRow label="Pitch" value={pitch} onChange={setPitch} min={-12} max={12} />
+          <SliderRow label="Stability" value={stability} onChange={setStability} min={0} max={100} />
+          <SliderRow label="Expressiveness" value={expressiveness} onChange={setExpressiveness} min={0} max={100} />
         </div>
       </DrawerContent>
     </Drawer>
   );
 };
 
-function SliderRow({ label, value, onChange }: {
+function SliderRow({ label, value, onChange, min = 0, max = 100 }: {
   label: string;
   value: number[];
   onChange: (v: number[]) => void;
+  min?: number;
+  max?: number;
 }) {
   return (
     <div className="space-y-3">
-      <Label className="text-sm text-muted-foreground">{label}</Label>
-      <Slider value={value} onValueChange={onChange} max={100} step={1} className="py-1" />
+      <div className="flex justify-between">
+        <Label className="text-sm text-muted-foreground">{label}</Label>
+        <span className="text-xs text-muted-foreground font-mono">{value[0]}</span>
+      </div>
+      <Slider value={value} onValueChange={onChange} min={min} max={max} step={1} className="py-1" />
     </div>
   );
 }
