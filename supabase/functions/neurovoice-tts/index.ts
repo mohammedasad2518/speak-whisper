@@ -6,13 +6,14 @@ const corsHeaders = {
 };
 
 // Each preset maps to a DISTINCT Google Translate TTS voice identity
-// using different language/locale codes to produce genuinely different speaker characteristics
-const VOICE_PRESETS: Record<string, { lang: string; slow: boolean }> = {
-  "arjun":   { lang: "en-gb", slow: true  },  // British English — deeper, measured
-  "riya":    { lang: "en-au", slow: false },  // Australian English — warm, lighter
-  "karan":   { lang: "en-us", slow: false },  // American English — clear, neutral
-  "ananya":  { lang: "en-in", slow: false },  // Indian English — distinct intonation
-  "neel":    { lang: "en-za", slow: true  },  // South African English — balanced narration
+// using different language/locale codes to produce genuinely different speaker characteristics.
+// Male presets use slow=true for a deeper, more measured baseline.
+const VOICE_PRESETS: Record<string, { lang: string; slow: boolean; pitchBaseline: number }> = {
+  "oliver":    { lang: "en-gb", slow: true,  pitchBaseline: -4 },  // British English — deep adult male
+  "james":     { lang: "en-us", slow: true,  pitchBaseline: -2 },  // American English — calm male narration
+  "amelia":    { lang: "en-au", slow: false, pitchBaseline: 2  },  // Australian English — warm female
+  "charlotte": { lang: "en-in", slow: false, pitchBaseline: 3  },  // Indian English — expressive female
+  "william":   { lang: "en-za", slow: true,  pitchBaseline: -3 },  // South African English — neutral male narrator
 };
 
 // Text normalization for better pronunciation
@@ -128,11 +129,11 @@ Deno.serve(async (req) => {
       });
     }
 
-    const preset = VOICE_PRESETS[voicePreset] || VOICE_PRESETS["neel"];
+    const preset = VOICE_PRESETS[voicePreset] || VOICE_PRESETS["william"];
     const processedText = normalizeText(text);
     const isSlow = preset.slow || (speed !== undefined && speed < 30);
 
-    console.log(`TTS: voice=${voicePreset}, lang=${preset.lang}, slow=${isSlow}, chars=${processedText.length}`);
+    console.log(`TTS: voice=${voicePreset}, lang=${preset.lang}, slow=${isSlow}, pitchBaseline=${preset.pitchBaseline}, chars=${processedText.length}`);
 
     const chunks = splitText(processedText);
     console.log(`TTS: split into ${chunks.length} chunks`);
@@ -158,6 +159,7 @@ Deno.serve(async (req) => {
       headers: {
         ...corsHeaders,
         "Content-Type": "audio/mpeg",
+        "X-Pitch-Baseline": String(preset.pitchBaseline),
       },
     });
   } catch (error: unknown) {

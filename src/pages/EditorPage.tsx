@@ -80,7 +80,7 @@ const EditorPage = () => {
   const { addProject } = useProjects();
 
   const settingsRef = useRef<VoiceSettingsState>({
-    voicePreset: "neel",
+    voicePreset: "william",
     speed: 50,
     pitch: 0,
     stability: 70,
@@ -122,12 +122,13 @@ const EditorPage = () => {
         throw new Error(errData.error || `Request failed: ${response.status}`);
       }
 
+      const pitchBaseline = parseInt(response.headers.get("X-Pitch-Baseline") || "0", 10);
       const audioBlob = await response.blob();
-      const pitchSemitones = settings.pitch;
+      const totalPitch = pitchBaseline + settings.pitch;
 
       let finalUrl: string;
-      if (pitchSemitones !== 0) {
-        const shifted = await applyPitchShift(audioBlob, pitchSemitones);
+      if (totalPitch !== 0) {
+        const shifted = await applyPitchShift(audioBlob, totalPitch);
         finalUrl = URL.createObjectURL(shifted);
       } else {
         finalUrl = URL.createObjectURL(audioBlob);
