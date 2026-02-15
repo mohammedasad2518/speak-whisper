@@ -30,15 +30,15 @@ interface Props {
 }
 
 const voices = [
-  { value: "arjun", label: "Arjun" },
-  { value: "riya", label: "Riya" },
-  { value: "karan", label: "Karan" },
-  { value: "ananya", label: "Ananya" },
-  { value: "neel", label: "Neel" },
+  { value: "oliver", label: "Oliver" },
+  { value: "james", label: "James" },
+  { value: "amelia", label: "Amelia" },
+  { value: "charlotte", label: "Charlotte" },
+  { value: "william", label: "William" },
 ];
 
 const VoiceSettingsPanel = ({ open, onOpenChange, onChange }: Props) => {
-  const [voicePreset, setVoicePreset] = useState("neel");
+  const [voicePreset, setVoicePreset] = useState("william");
   const [speed, setSpeed] = useState([50]);
   const [pitch, setPitch] = useState([0]);
   const [stability, setStability] = useState([70]);

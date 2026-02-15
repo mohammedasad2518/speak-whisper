@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, type ReactNode } from "react";
+import { createContext, useContext, useState, useCallback, useRef, type ReactNode } from "react";
 
 interface User {
   email: string;
@@ -8,26 +8,50 @@ interface User {
 
 interface AuthCtx {
   user: User | null;
-  signIn: (email: string, password: string) => Promise<void>;
-  signUp: (name: string, email: string, password: string) => Promise<void>;
+  sendOtp: (email: string) => Promise<void>;
+  verifyOtp: (email: string, otp: string) => Promise<void>;
   signOut: () => void;
 }
 
 const Ctx = createContext<AuthCtx>({
   user: null,
-  signIn: async () => {},
-  signUp: async () => {},
+  sendOtp: async () => {},
+  verifyOtp: async () => {},
   signOut: () => {},
 });
 
 export const useAuth = () => useContext(Ctx);
 
+// Mock OTP store: email -> { otp, expiresAt }
+type OtpEntry = { otp: string; expiresAt: number };
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
+  const otpStore = useRef<Map<string, OtpEntry>>(new Map());
 
-  const signIn = useCallback(async (email: string, _password: string) => {
-    // Mock auth — accept any credentials
+  const sendOtp = useCallback(async (email: string) => {
+    // Mock: generate a 6-digit OTP and store it (valid for 5 minutes)
+    await new Promise((r) => setTimeout(r, 500));
+    const otp = String(Math.floor(100000 + Math.random() * 900000));
+    otpStore.current.set(email.toLowerCase(), {
+      otp,
+      expiresAt: Date.now() + 5 * 60 * 1000,
+    });
+    // In a real system this would send an email. For academic demo, log it.
+    console.log(`[NeuroVoice Mock OTP] Code for ${email}: ${otp}`);
+  }, []);
+
+  const verifyOtp = useCallback(async (email: string, otp: string) => {
     await new Promise((r) => setTimeout(r, 400));
+    const entry = otpStore.current.get(email.toLowerCase());
+    if (!entry) throw new Error("No OTP was sent for this email");
+    if (Date.now() > entry.expiresAt) {
+      otpStore.current.delete(email.toLowerCase());
+      throw new Error("OTP has expired. Please request a new one.");
+    }
+    if (entry.otp !== otp) throw new Error("Invalid OTP");
+    otpStore.current.delete(email.toLowerCase());
+
     const name = email.split("@")[0];
     setUser({
       email,
@@ -36,19 +60,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
   }, []);
 
-  const signUp = useCallback(async (name: string, email: string, _password: string) => {
-    await new Promise((r) => setTimeout(r, 400));
-    setUser({
-      email,
-      name,
-      avatar: name.charAt(0).toUpperCase(),
-    });
-  }, []);
-
   const signOut = useCallback(() => setUser(null), []);
 
   return (
-    <Ctx.Provider value={{ user, signIn, signUp, signOut }}>
+    <Ctx.Provider value={{ user, sendOtp, verifyOtp, signOut }}>
       {children}
     </Ctx.Provider>
   );
