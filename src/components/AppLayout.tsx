@@ -9,7 +9,7 @@ const AppLayout = () => {
   if (!user) return <Navigate to="/signin" replace />;
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen flex flex-col">
       <TopNavbar />
       <div className="flex flex-1 overflow-hidden">
         <AppSidebar />

@@ -13,7 +13,7 @@ const MobileNav = () => {
   const location = useLocation();
 
   return (
-    <nav className="fixed bottom-0 inset-x-0 z-50 border-t border-border bg-background md:hidden">
+    <nav className="fixed bottom-0 inset-x-0 z-50 glass-strong border-t border-white/20 md:hidden">
       <div className="flex items-center justify-around h-16">
         {tabs.map(({ to, icon: Icon, label }) => {
           const active = location.pathname === to || (to !== "/home" && location.pathname.startsWith(to));

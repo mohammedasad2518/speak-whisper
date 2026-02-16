@@ -3,6 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { DynamicBackground } from "@/components/DynamicBackground";
 import AppLayout from "@/components/AppLayout";
 import LandingPage from "@/pages/LandingPage";
 import HomePage from "@/pages/HomePage";
@@ -27,20 +28,22 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<LandingPage />} />
-              <Route path="/signin" element={<SignInPage />} />
-              <Route path="/signup" element={<SignUpPage />} />
-              <Route element={<AppLayout />}>
-                <Route path="/home" element={<HomePage />} />
-                <Route path="/new" element={<NewPage />} />
-                <Route path="/creator" element={<CreatorPage />} />
-                <Route path="/settings" element={<SettingsPage />} />
-              </Route>
-              <Route path="/editor" element={<EditorPage />} />
-              <Route path="/stt" element={<SpeechToTextPage />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
+            <DynamicBackground>
+              <Routes>
+                <Route path="/" element={<LandingPage />} />
+                <Route path="/signin" element={<SignInPage />} />
+                <Route path="/signup" element={<SignUpPage />} />
+                <Route element={<AppLayout />}>
+                  <Route path="/home" element={<HomePage />} />
+                  <Route path="/new" element={<NewPage />} />
+                  <Route path="/creator" element={<CreatorPage />} />
+                  <Route path="/settings" element={<SettingsPage />} />
+                </Route>
+                <Route path="/editor" element={<EditorPage />} />
+                <Route path="/stt" element={<SpeechToTextPage />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </DynamicBackground>
           </BrowserRouter>
         </ProjectsProvider>
       </AuthProvider>
