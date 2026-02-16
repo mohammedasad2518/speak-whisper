@@ -25,7 +25,7 @@ const SignInPage = () => {
     try {
       await sendOtp(email);
       setStep("otp");
-      setSuccess("OTP sent! Check your console for the demo code.");
+      setSuccess("OTP sent successfully");
     } catch {
       setError("Failed to send OTP");
     } finally {
@@ -117,6 +117,11 @@ const SignInPage = () => {
             </button>
           </form>
         )}
+
+        <p className="text-xs text-muted-foreground text-center mt-6">
+          OTP verification is implemented in demo mode for academic purposes.
+          No real authentication or email delivery is performed.
+        </p>
       </div>
     </div>
   );
