@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;450;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;450;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -9,7 +9,7 @@
     --background: 0 0% 100%;
     --foreground: 0 0% 9%;
 
-    --card: 0 0% 97%;
+    --card: 0 0% 100%;
     --card-foreground: 0 0% 9%;
 
     --popover: 0 0% 100%;
@@ -24,56 +24,34 @@
     --muted: 0 0% 95%;
     --muted-foreground: 0 0% 45%;
 
-    --accent: 0 0% 93%;
+    --accent: 210 40% 96%;
     --accent-foreground: 0 0% 9%;
 
     --destructive: 0 62% 50%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 0 0% 90%;
-    --input: 0 0% 90%;
-    --ring: 0 0% 60%;
+    --border: 0 0% 85%;
+    --input: 0 0% 85%;
+    --ring: 210 40% 60%;
 
-    --radius: 0.5rem;
+    --radius: 0.75rem;
 
-    --sidebar-background: 0 0% 97%;
+    --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 0 0% 30%;
     --sidebar-primary: 0 0% 9%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 0 0% 93%;
+    --sidebar-accent: 210 40% 96%;
     --sidebar-accent-foreground: 0 0% 15%;
-    --sidebar-border: 0 0% 90%;
-    --sidebar-ring: 0 0% 60%;
-  }
+    --sidebar-border: 0 0% 85%;
+    --sidebar-ring: 210 40% 60%;
 
-  .dark {
-    --background: 0 0% 0%;
-    --foreground: 0 0% 90%;
-    --card: 0 0% 5%;
-    --card-foreground: 0 0% 90%;
-    --popover: 0 0% 7%;
-    --popover-foreground: 0 0% 90%;
-    --primary: 0 0% 100%;
-    --primary-foreground: 0 0% 0%;
-    --secondary: 0 0% 10%;
-    --secondary-foreground: 0 0% 75%;
-    --muted: 0 0% 8%;
-    --muted-foreground: 0 0% 45%;
-    --accent: 0 0% 12%;
-    --accent-foreground: 0 0% 90%;
-    --destructive: 0 62% 50%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 0 0% 12%;
-    --input: 0 0% 10%;
-    --ring: 0 0% 40%;
-    --sidebar-background: 0 0% 3%;
-    --sidebar-foreground: 0 0% 75%;
-    --sidebar-primary: 0 0% 100%;
-    --sidebar-primary-foreground: 0 0% 0%;
-    --sidebar-accent: 0 0% 10%;
-    --sidebar-accent-foreground: 0 0% 85%;
-    --sidebar-border: 0 0% 12%;
-    --sidebar-ring: 0 0% 40%;
+    /* Glass tokens */
+    --glass-bg: 0 0% 100% / 0.15;
+    --glass-bg-strong: 0 0% 100% / 0.35;
+    --glass-border: 0 0% 100% / 0.3;
+    --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.12);
+    --glass-blur: 16px;
+    --glass-blur-strong: 24px;
   }
 }
 
@@ -83,12 +61,88 @@
   }
 
   body {
-    @apply bg-background text-foreground antialiased;
+    @apply text-foreground antialiased;
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
     font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    background: transparent;
   }
 
   code, pre, .font-mono {
     font-family: 'IBM Plex Mono', monospace;
+  }
+}
+
+@layer components {
+  .glass {
+    background: hsla(var(--glass-bg));
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid hsla(var(--glass-border));
+    box-shadow: var(--glass-shadow);
+  }
+
+  .glass-strong {
+    background: hsla(var(--glass-bg-strong));
+    backdrop-filter: blur(var(--glass-blur-strong));
+    -webkit-backdrop-filter: blur(var(--glass-blur-strong));
+    border: 1px solid hsla(var(--glass-border));
+    box-shadow: var(--glass-shadow);
+  }
+
+  .glass-card {
+    @apply glass rounded-2xl;
+  }
+
+  .glass-card-strong {
+    @apply glass-strong rounded-2xl;
+  }
+
+  .glass-hover {
+    @apply transition-all duration-300;
+  }
+
+  .glass-hover:hover {
+    background: hsla(0 0% 100% / 0.28);
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.18);
+    transform: translateY(-1px);
+  }
+
+  .glass-btn {
+    @apply glass rounded-xl px-6 py-2.5 font-medium transition-all duration-200;
+  }
+
+  .glass-btn:hover {
+    background: hsla(0 0% 100% / 0.3);
+    box-shadow: 0 4px 16px 0 rgba(31, 38, 135, 0.15);
+  }
+
+  .glass-input {
+    @apply glass rounded-xl px-4 py-2.5 text-sm outline-none;
+    background: hsla(0 0% 100% / 0.25);
+  }
+
+  .glass-input:focus {
+    background: hsla(0 0% 100% / 0.4);
+    border-color: hsla(0 0% 100% / 0.5);
+    box-shadow: 0 0 0 3px hsla(210 40% 60% / 0.2);
+  }
+}
+
+@layer utilities {
+  .animate-glass-in {
+    animation: glassIn 0.5s ease-out both;
+  }
+}
+
+@keyframes glassIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.97);
+    backdrop-filter: blur(0px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    backdrop-filter: blur(var(--glass-blur));
   }
 }
