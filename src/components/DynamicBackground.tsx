@@ -67,8 +67,8 @@ export const DynamicBackground = ({ children }: { children: ReactNode }) => {
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
           style={{ backgroundImage: `url(${bgUrl})` }}
         />
-        {/* Subtle overlay to ensure readability */}
-        <div className="absolute inset-0 bg-white/30" />
+        {/* Minimal overlay – keep background vivid */}
+        <div className="absolute inset-0 bg-white/5" />
       </div>
       {/* Fallback bg while loading */}
       <div className="fixed inset-0 -z-20 bg-secondary" />
