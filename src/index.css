@@ -45,13 +45,15 @@
     --sidebar-border: 0 0% 85%;
     --sidebar-ring: 210 40% 60%;
 
-    /* Glass tokens */
-    --glass-bg: 0 0% 100% / 0.15;
-    --glass-bg-strong: 0 0% 100% / 0.35;
-    --glass-border: 0 0% 100% / 0.3;
-    --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.12);
-    --glass-blur: 16px;
-    --glass-blur-strong: 24px;
+    /* Glass tokens – iOS liquid glass */
+    --glass-bg: 0 0% 100% / 0.08;
+    --glass-bg-strong: 0 0% 100% / 0.12;
+    --glass-border: 0 0% 100% / 0.25;
+    --glass-border-glow: 0 0% 100% / 0.4;
+    --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.08);
+    --glass-highlight: inset 0 1px 0 0 hsla(0 0% 100% / 0.35);
+    --glass-blur: 24px;
+    --glass-blur-strong: 32px;
   }
 }
 
@@ -78,7 +80,7 @@
     backdrop-filter: blur(var(--glass-blur));
     -webkit-backdrop-filter: blur(var(--glass-blur));
     border: 1px solid hsla(var(--glass-border));
-    box-shadow: var(--glass-shadow);
+    box-shadow: var(--glass-shadow), var(--glass-highlight);
   }
 
   .glass-strong {
@@ -86,7 +88,8 @@
     backdrop-filter: blur(var(--glass-blur-strong));
     -webkit-backdrop-filter: blur(var(--glass-blur-strong));
     border: 1px solid hsla(var(--glass-border));
-    box-shadow: var(--glass-shadow);
+    border-top-color: hsla(var(--glass-border-glow));
+    box-shadow: var(--glass-shadow), var(--glass-highlight);
   }
 
   .glass-card {
@@ -102,8 +105,8 @@
   }
 
   .glass-hover:hover {
-    background: hsla(0 0% 100% / 0.28);
-    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.18);
+    background: hsla(0 0% 100% / 0.18);
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.12);
     transform: translateY(-1px);
   }
 
