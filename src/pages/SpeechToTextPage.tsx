@@ -1,18 +1,60 @@
 import { useState, useRef, useCallback, useEffect } from "react";
-import { ArrowLeft, Mic, Square, Download } from "lucide-react";
+import { ArrowLeft, Mic, Square, Download, AlertCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
+
+// Web Speech API type declarations
+interface SpeechRecognitionAlt {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  start: () => void;
+  stop: () => void;
+  abort: () => void;
+  onresult: ((event: SpeechRecognitionEvent) => void) | null;
+  onerror: ((event: SpeechRecognitionErrorEvent) => void) | null;
+  onend: (() => void) | null;
+}
+
+interface SpeechRecognitionEvent {
+  resultIndex: number;
+  results: {
+    length: number;
+    [index: number]: {
+      isFinal: boolean;
+      [index: number]: { transcript: string };
+    };
+  };
+}
+
+interface SpeechRecognitionErrorEvent {
+  error: string;
+  message?: string;
+}
 
 const SpeechToTextPage = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [isRecording, setIsRecording] = useState(false);
   const [transcript, setTranscript] = useState("");
-  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [interim, setInterim] = useState("");
   const [levels, setLevels] = useState<number[]>(Array(24).fill(8));
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const chunksRef = useRef<Blob[]>([]);
+  const [supported, setSupported] = useState(true);
+
+  const recognitionRef = useRef<SpeechRecognitionAlt | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
   const animRef = useRef<number>();
+  const finalTranscriptRef = useRef<string>("");
+  const shouldKeepListeningRef = useRef(false);
+
+  useEffect(() => {
+    const SR = (window as unknown as { SpeechRecognition?: unknown; webkitSpeechRecognition?: unknown }).SpeechRecognition
+      || (window as unknown as { webkitSpeechRecognition?: unknown }).webkitSpeechRecognition;
+    if (!SR) setSupported(false);
+  }, []);
 
   const tickLevels = useCallback(() => {
     const analyser = analyserRef.current;
@@ -28,54 +70,137 @@ const SpeechToTextPage = () => {
     animRef.current = requestAnimationFrame(tickLevels);
   }, []);
 
+  const cleanup = useCallback(() => {
+    if (animRef.current) cancelAnimationFrame(animRef.current);
+    streamRef.current?.getTracks().forEach((t) => t.stop());
+    streamRef.current = null;
+    audioCtxRef.current?.close().catch(() => {});
+    audioCtxRef.current = null;
+    analyserRef.current = null;
+    setLevels(Array(24).fill(8));
+  }, []);
+
   const startRecording = async () => {
+    const SRClass = ((window as unknown as { SpeechRecognition?: new () => SpeechRecognitionAlt }).SpeechRecognition
+      || (window as unknown as { webkitSpeechRecognition?: new () => SpeechRecognitionAlt }).webkitSpeechRecognition);
+
+    if (!SRClass) {
+      toast({
+        title: "Not supported",
+        description: "Speech recognition is not supported in this browser. Try Chrome or Edge.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
+      // Mic for waveform visualization
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
       const audioCtx = new AudioContext();
+      audioCtxRef.current = audioCtx;
       const source = audioCtx.createMediaStreamSource(stream);
       const analyser = audioCtx.createAnalyser();
       analyser.fftSize = 256;
       source.connect(analyser);
       analyserRef.current = analyser;
 
-      const recorder = new MediaRecorder(stream);
-      chunksRef.current = [];
-      recorder.ondataavailable = (e) => chunksRef.current.push(e.data);
-      recorder.onstop = () => {
-        const blob = new Blob(chunksRef.current, { type: "audio/webm" });
-        const url = URL.createObjectURL(blob);
-        setAudioUrl(url);
-        stream.getTracks().forEach((t) => t.stop());
-        // Mock transcription
-        setTranscript(
-          "This is a simulated transcription output from the neural speech recognition model. " +
-          "In a production deployment, the recorded audio would be processed through a pre-trained " +
-          "automatic speech recognition (ASR) neural network running in inference mode."
-        );
-      };
-      recorder.start();
-      mediaRecorderRef.current = recorder;
-      setIsRecording(true);
+      // Speech recognition
+      const recognition = new SRClass();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = "en-US";
+
+      finalTranscriptRef.current = "";
       setTranscript("");
-      setAudioUrl(null);
+      setInterim("");
+
+      recognition.onresult = (event: SpeechRecognitionEvent) => {
+        let interimText = "";
+        let finalText = finalTranscriptRef.current;
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const result = event.results[i];
+          const text = result[0].transcript;
+          if (result.isFinal) {
+            finalText += text + " ";
+          } else {
+            interimText += text;
+          }
+        }
+        finalTranscriptRef.current = finalText;
+        setTranscript(finalText);
+        setInterim(interimText);
+      };
+
+      recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
+        console.error("Speech recognition error:", event.error);
+        if (event.error === "not-allowed" || event.error === "service-not-allowed") {
+          toast({
+            title: "Microphone access denied",
+            description: "Please allow microphone access in your browser settings.",
+            variant: "destructive",
+          });
+          shouldKeepListeningRef.current = false;
+          setIsRecording(false);
+          cleanup();
+        } else if (event.error === "no-speech") {
+          // ignore — keep listening
+        } else if (event.error === "aborted") {
+          // user stopped
+        } else {
+          toast({ title: "Recognition error", description: event.error, variant: "destructive" });
+        }
+      };
+
+      recognition.onend = () => {
+        // Auto-restart while user wants to keep listening
+        if (shouldKeepListeningRef.current) {
+          try {
+            recognition.start();
+          } catch {
+            setIsRecording(false);
+            cleanup();
+          }
+        } else {
+          setIsRecording(false);
+          cleanup();
+        }
+      };
+
+      shouldKeepListeningRef.current = true;
+      recognition.start();
+      recognitionRef.current = recognition;
+      setIsRecording(true);
       animRef.current = requestAnimationFrame(tickLevels);
-    } catch {
-      // mic access denied
+    } catch (err) {
+      console.error("startRecording error:", err);
+      toast({
+        title: "Could not start",
+        description: "Microphone access is required for speech recognition.",
+        variant: "destructive",
+      });
+      cleanup();
     }
   };
 
   const stopRecording = () => {
-    mediaRecorderRef.current?.stop();
+    shouldKeepListeningRef.current = false;
+    try {
+      recognitionRef.current?.stop();
+    } catch {
+      // ignore
+    }
+    setInterim("");
     setIsRecording(false);
-    if (animRef.current) cancelAnimationFrame(animRef.current);
-    setLevels(Array(24).fill(8));
   };
 
   useEffect(() => {
     return () => {
-      if (animRef.current) cancelAnimationFrame(animRef.current);
+      shouldKeepListeningRef.current = false;
+      try { recognitionRef.current?.abort(); } catch { /* noop */ }
+      cleanup();
     };
-  }, []);
+  }, [cleanup]);
 
   const handleDownload = () => {
     if (!transcript) return;
@@ -87,23 +212,35 @@ const SpeechToTextPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen flex flex-col">
       {/* Top bar */}
-      <div className="h-14 border-b border-border flex items-center justify-between px-6 shrink-0">
-        <button onClick={() => navigate(-1)} className="p-2 -ml-2 hover:bg-accent rounded-lg transition-colors">
-          <ArrowLeft className="h-5 w-5" />
+      <div className="h-14 glass-strong border-b border-white/20 flex items-center justify-between px-6 shrink-0">
+        <button onClick={() => navigate(-1)} className="p-2 -ml-2 hover:bg-white/20 rounded-lg transition-colors">
+          <ArrowLeft className="h-5 w-5 text-foreground" />
         </button>
-        <h1 className="text-base font-semibold">Speech to Text</h1>
+        <h1 className="text-base font-semibold text-foreground">Speech to Text</h1>
         <div className="w-9" />
       </div>
 
       <div className="flex-1 flex flex-col max-w-3xl w-full mx-auto p-6 md:p-10 gap-8">
+        {!supported && (
+          <div className="glass-card p-4 flex items-start gap-3 animate-glass-in">
+            <AlertCircle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
+            <div className="text-sm">
+              <p className="font-medium text-foreground">Browser not supported</p>
+              <p className="text-muted-foreground mt-1">
+                Speech recognition requires Chrome, Edge, or Safari. Please switch browsers to use this feature.
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Waveform */}
         <div className="flex items-end justify-center gap-[3px] h-24 py-4">
           {levels.map((h, i) => (
             <div
               key={i}
-              className={`w-1 rounded-full transition-all duration-75 ${isRecording ? "bg-foreground" : "bg-muted-foreground/20"}`}
+              className={`w-1 rounded-full transition-all duration-75 ${isRecording ? "bg-foreground" : "bg-foreground/20"}`}
               style={{ height: `${h}%` }}
             />
           ))}
@@ -124,6 +261,7 @@ const SpeechToTextPage = () => {
             <Button
               size="lg"
               onClick={startRecording}
+              disabled={!supported}
               className="h-16 w-16 rounded-full p-0 shadow-lg shadow-primary/20"
             >
               <Mic className="h-6 w-6" />
@@ -132,27 +270,32 @@ const SpeechToTextPage = () => {
         </div>
 
         <p className="text-center text-xs text-muted-foreground">
-          {isRecording ? "Recording… tap to stop" : "Tap to start recording"}
+          {isRecording ? "Listening… speak clearly, then tap to stop" : "Tap to start recording"}
         </p>
 
         {/* Transcript output */}
-        {transcript && (
-          <div className="space-y-3">
+        {(transcript || interim) && (
+          <div className="space-y-3 animate-glass-in">
             <div className="flex items-center justify-between">
-              <h2 className="text-sm font-medium text-muted-foreground">Transcript</h2>
-              <button onClick={handleDownload} className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors">
-                <Download className="h-3.5 w-3.5" />
-                <span>Download</span>
-              </button>
+              <h2 className="text-sm font-medium text-foreground">Transcript</h2>
+              {transcript && (
+                <button onClick={handleDownload} className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors">
+                  <Download className="h-3.5 w-3.5" />
+                  <span>Download</span>
+                </button>
+              )}
             </div>
-            <div className="rounded-2xl bg-card border border-border p-5">
-              <p className="text-sm leading-relaxed">{transcript}</p>
+            <div className="glass-card p-5">
+              <p className="text-sm leading-relaxed text-foreground">
+                {transcript}
+                {interim && <span className="text-muted-foreground italic">{interim}</span>}
+              </p>
             </div>
           </div>
         )}
 
         <p className="text-xs text-muted-foreground text-center mt-auto">
-          Neural Speech Recognition (Inference Only)
+          Real-time Speech Recognition (Web Speech API)
         </p>
       </div>
     </div>
